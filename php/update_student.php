@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $gender = trim($_POST['gender'] ?? '');
     $b_ed = trim($_POST['b_ed'] ?? '');
     $admitted_year = isset($_POST['admitted_year']) ? intval($_POST['admitted_year']) : 0;
-    
+
     // Validate input
     if ($id <= 0 || empty($name) || $semester <= 0 || $semester > 10 || empty($rollno) || empty($gender) || empty($b_ed) || $admitted_year <= 0) {
         if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
@@ -30,15 +30,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         exit;
     }
-    
+
     try {
         // Check if student exists
-        $query = "SELECT photo FROM students WHERE id = :id";
+        $query = "SELECT photo FROM students WHERE id = ?";
         $stmt = $conn->prepare($query);
-        $stmt->bindParam(':id', $id);
+        $stmt->bind_param('i', $id);
         $stmt->execute();
-        $student = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+        $result = $stmt->get_result();
+        $student = $result->fetch_assoc();
+
         if (!$student) {
             if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
                 echo json_encode([
@@ -50,14 +51,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             exit;
         }
-        
+
         // Handle photo upload
         $photo = $student['photo']; // Default to existing photo
-        
+
         if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
             $allowed_types = ['image/jpeg', 'image/jpg', 'image/png'];
             $max_size = 5 * 1024 * 1024; // 5MB
-            
+
             // Validate file type and size
             if (!in_array($_FILES['photo']['type'], $allowed_types)) {
                 if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
@@ -70,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 exit;
             }
-            
+
             if ($_FILES['photo']['size'] > $max_size) {
                 if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
                     echo json_encode([
@@ -82,12 +83,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 exit;
             }
-            
+
             // Generate unique filename
             $file_ext = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
             $new_filename = 'student_' . $id . '_' . time() . '.' . $file_ext;
             $upload_path = '../uploads/' . $new_filename;
-            
+
             // Move uploaded file
             if (move_uploaded_file($_FILES['photo']['tmp_name'], $upload_path)) {
                 // Delete old photo if exists
@@ -97,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         unlink($old_photo_path);
                     }
                 }
-                
+
                 $photo = $new_filename;
             } else {
                 if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
@@ -111,33 +112,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
         }
-        
+
         // Update student in database
-        $query = "UPDATE students SET name = :name, semester = :semester, rollno = :rollno, gender = :gender, b_ed = :b_ed, admitted_year = :admitted_year";
-        
+        $query = "UPDATE students SET name = ?, semester = ?, rollno = ?, gender = ?, b_ed = ?, admitted_year = ?";
+
         // Only update photo if a new one was uploaded
         if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-            $query .= ", photo = :photo";
+            $query .= ", photo = ?";
         }
-        
-        $query .= " WHERE id = :id";
-        
+
+        $query .= " WHERE id = ?";
         $stmt = $conn->prepare($query);
-        $stmt->bindParam(':name', $name);
-        $stmt->bindParam(':semester', $semester);
-        $stmt->bindParam(':rollno', $rollno);
-        $stmt->bindParam(':gender', $gender);
-        $stmt->bindParam(':b_ed', $b_ed);
-        $stmt->bindParam(':admitted_year', $admitted_year);
-        $stmt->bindParam(':id', $id);
-        
-        // Only bind photo if a new one was uploaded
+
         if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-            $stmt->bindParam(':photo', $photo);
+            $stmt->bind_param('sisssssi', $name, $semester, $rollno, $gender, $b_ed, $admitted_year, $photo, $id);
+        } else {
+            $stmt->bind_param('sissssi', $name, $semester, $rollno, $gender, $b_ed, $admitted_year, $id);
         }
-        
+
         $result = $stmt->execute();
-        
+
         if ($result) {
             if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
                 echo json_encode([
@@ -157,7 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: ../index.html?error=update_failed');
             }
         }
-    } catch (PDOException $e) {
+    } catch (Exception $e) {
         if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
             echo json_encode([
                 'success' => false,
