@@ -151,34 +151,101 @@ if (!isset($_SESSION['admin_id'])) {
                     <p>Loading notices data...</p>
                 </div>
                 <script>
-                // Load notices via AJAX
-                function fetchNotices() {
-                    const noticesList = document.getElementById('noticesList');
-                    noticesList.innerHTML = '<p>Loading notices data...</p>';
-                    fetch('../php/fetch_notices.php')
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.success && data.notices.length > 0) {
-                                let html = '<table class="data-table"><thead><tr><th>ID</th><th>Title</th><th>Content</th><th>Created At</th></tr></thead><tbody>';
-                                data.notices.forEach(notice => {
-                                    html += `<tr>
-                                        <td>${notice.id}</td>
-                                        <td>${notice.title}</td>
-                                        <td>${notice.content}</td>
-                                        <td>${notice.created_at}</td>
-                                    </tr>`;
-                                });
-                                html += '</tbody></table>';
-                                noticesList.innerHTML = html;
-                            } else {
-                                noticesList.innerHTML = '<p>No notices found.</p>';
-                            }
-                        })
-                        .catch(() => {
-                            noticesList.innerHTML = '<p style="color:red;">Error loading notices.</p>';
-                        });
-                }
-                document.addEventListener('DOMContentLoaded', fetchNotices);
+                document.addEventListener('DOMContentLoaded', function() {
+                    // --- Notices Table Logic ---
+                    function fetchNotices() {
+                        const noticesList = document.getElementById('noticesList');
+                        noticesList.innerHTML = '<p>Loading notices data...</p>';
+                        fetch('../php/fetch_notices.php')
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success && data.notices.length > 0) {
+                                    let html = '<table class="data-table"><thead><tr><th>ID</th><th>Title</th><th>Content</th><th>Created At</th></tr></thead><tbody>';
+                                    data.notices.forEach(notice => {
+                                        html += `<tr>
+                                            <td>${notice.id}</td>
+                                            <td>${notice.title}</td>
+                                            <td>${notice.content}</td>
+                                            <td>${notice.created_at}</td>
+                                        </tr>`;
+                                    });
+                                    html += '</tbody></table>';
+                                    noticesList.innerHTML = html;
+                                } else {
+                                    noticesList.innerHTML = '<p>No notices found.</p>';
+                                }
+                            })
+                            .catch(() => {
+                                noticesList.innerHTML = '<p style="color:red;">Error loading notices.</p>';
+                            });
+                    }
+                    fetchNotices();
+
+                    // --- Add Notice Modal Logic ---
+                    const addBtn = document.getElementById('addNoticeBtn');
+                    const modal = document.getElementById('noticeFormModal');
+                    const formContainer = document.getElementById('noticeFormContainer');
+                    const closeBtn = modal.querySelector('.close-modal');
+
+                    addBtn.onclick = function() {
+                        formContainer.innerHTML = `
+                            <form id="addNoticeForm">
+                                <div class="form-group">
+                                    <label for="noticeTitle">Title:</label>
+                                    <input type="text" id="noticeTitle" name="title" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="noticeContent">Content:</label>
+                                    <textarea id="noticeContent" name="content" required></textarea>
+                                </div>
+                                <button type="submit" class="action-btn">Add Notice</button>
+                                <div id="addNoticeMsg" style="margin-top:10px;"></div>
+                            </form>
+                        `;
+                        modal.style.display = 'block';
+
+                        document.getElementById('addNoticeForm').onsubmit = function(e) {
+                            e.preventDefault();
+                            const formData = new FormData(this);
+                            fetch('../php/admin/add_notice.php', {
+                                method: 'POST',
+                                body: formData
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                const msg = document.getElementById('addNoticeMsg');
+                                if (data.success) {
+                                    msg.style.color = 'green';
+                                    msg.textContent = 'Notice added successfully!';
+                                    setTimeout(() => {
+                                        modal.style.display = 'none';
+                                        fetchNotices();
+                                    }, 800);
+                                } else {
+                                    msg.style.color = 'red';
+                                    msg.textContent = data.error || 'Failed to add notice.';
+                                }
+                            })
+                            .catch(() => {
+                                const msg = document.getElementById('addNoticeMsg');
+                                msg.style.color = 'red';
+                                msg.textContent = 'Error submitting notice.';
+                            });
+                        };
+                    };
+
+                    closeBtn.onclick = function() {
+                        modal.style.display = 'none';
+                    };
+                    window.onclick = function(event) {
+                        if (event.target == modal) {
+                            modal.style.display = 'none';
+                        }
+                    };
+
+                    // --- Contact Messages Section (unchanged) ---
+                    // ...existing code for contacts...
+                });
                 </script>
                 <!-- Add/Edit Notice Form Modal -->
                 <div id="noticeFormModal" class="modal">

@@ -1,45 +1,36 @@
 <?php
-require_once '../db_connect.php';
+session_start();
 header('Content-Type: application/json');
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $title = trim($_POST['title'] ?? '');
-    $content = trim($_POST['content'] ?? '');
-    $created_at = date('Y-m-d H:i:s');
-
-    if (empty($title) || empty($content)) {
-        echo json_encode([
-            'status' => 'error',
-            'message' => 'Title and content are required.'
-        ]);
-        exit;
-    }
-
-    try {
-        $stmt = $conn->prepare("INSERT INTO notices (title, content, created_at) VALUES (?, ?, ?)");
-        $stmt->bind_param("sss", $title, $content, $created_at);
-        if ($stmt->execute()) {
-            echo json_encode([
-                'status' => 'success',
-                'message' => 'Notice added successfully.'
-            ]);
-        } else {
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'Failed to add notice.'
-            ]);
-        }
-        $stmt->close();
-    } catch (Exception $e) {
-        echo json_encode([
-            'status' => 'error',
-            'message' => 'Database error: ' . $e->getMessage()
-        ]);
-    }
-} else {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Invalid request method.'
-    ]);
+if (!isset($_SESSION['admin_id'])) {
+    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+    exit;
 }
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode(['success' => false, 'error' => 'Invalid request']);
+    exit;
+}
+
+$title = trim($_POST['title'] ?? '');
+$content = trim($_POST['content'] ?? '');
+
+if ($title === '' || $content === '') {
+    echo json_encode(['success' => false, 'error' => 'Title and content required']);
+    exit;
+}
+
+require_once(__DIR__ . '/../db_connect.php');
+
+$stmt = $conn->prepare("INSERT INTO notices (title, content, created_at) VALUES (?, ?, NOW())");
+$stmt->bind_param('ss', $title, $content);
+
+if ($stmt->execute()) {
+    echo json_encode(['success' => true]);
+} else {
+    echo json_encode(['success' => false, 'error' => 'Database error']);
+}
+
+$stmt->close();
+$conn->close();
 ?>
