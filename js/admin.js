@@ -692,21 +692,20 @@ function initStudentManagement() {
       deleteBtn.disabled = true;
       cancelBtn.disabled = true;
 
-      fetch(`../php/admin/delete_student.php`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: `id=${studentId}`,
-      })
+      // Use GET with id param for compatibility with backend
+      fetch(
+        `../php/admin/delete_student.php?id=${encodeURIComponent(studentId)}`
+      )
         .then((response) => response.json())
         .then((data) => {
-          if (data.success) {
+          if (data.status === "success") {
             // Show success message
             confirmDialog.querySelector(".confirm-dialog-content").innerHTML = `
                         <div class="success-icon">✓</div>
                         <h3>Student Deleted</h3>
-                        <p>${data.message}</p>
+                        <p>${
+                          data.message || "Student deleted successfully."
+                        }</p>
                     `;
 
             // Close dialog and refresh list after delay
@@ -722,7 +721,7 @@ function initStudentManagement() {
             confirmDialog.querySelector(".confirm-dialog-content").innerHTML = `
                         <div class="error-icon">❌</div>
                         <h3>Error</h3>
-                        <p>${data.message}</p>
+                        <p>${data.message || "Failed to delete student."}</p>
                         <button class="close-btn">Close</button>
                     `;
 
@@ -756,4 +755,156 @@ function initStudentManagement() {
         });
     });
   };
+}
+
+// Notices management
+function initNoticesManagement() {
+  const noticesList = document.getElementById("noticesList");
+  const addNoticeBtn = document.getElementById("addNoticeBtn");
+  const noticeFormModal = document.getElementById("noticeFormModal");
+  const noticeFormContainer = document.getElementById("noticeFormContainer");
+  const closeModalBtns = document.querySelectorAll(
+    "#noticeFormModal .close-modal"
+  );
+
+  // Load notices on section show
+  if (noticesList) {
+    loadNotices();
+  }
+
+  // Add notice button
+  if (addNoticeBtn) {
+    addNoticeBtn.addEventListener("click", () => {
+      showNoticeForm();
+    });
+    addNoticeBtn.addEventListener("mousedown", createRipple);
+  }
+
+  // Close modal
+  closeModalBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      closeNoticeModal();
+    });
+  });
+  window.addEventListener("click", (e) => {
+    if (e.target === noticeFormModal) closeNoticeModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && noticeFormModal.style.display === "block")
+      closeNoticeModal();
+  });
+
+  function closeNoticeModal() {
+    const modalContent = noticeFormModal.querySelector(".modal-content");
+    modalContent.style.opacity = "0";
+    modalContent.style.transform = "translateY(-20px)";
+    setTimeout(() => {
+      noticeFormModal.style.display = "none";
+      modalContent.style.transform = "";
+    }, 300);
+  }
+
+  function loadNotices() {
+    if (!noticesList) return;
+    noticesList.innerHTML = `<div class="loading-container"><div class="loading-spinner"></div><p>Loading notices...</p></div>`;
+    fetch("../php/admin/get_notices.php")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.status === "success" && data.notices.length > 0) {
+          renderNotices(data.notices);
+        } else {
+          noticesList.innerHTML = `<div class="empty-state"><div class="empty-icon">📝</div><h3>No notices found</h3></div>`;
+        }
+      })
+      .catch(() => {
+        noticesList.innerHTML = `<div class="error-state"><div class="error-icon">❌</div><h3>Failed to load notices</h3></div>`;
+      });
+  }
+
+  function renderNotices(notices) {
+    let html = `<table class="data-table"><thead><tr><th>ID</th><th>Title</th><th>Content</th><th>Date</th></tr></thead><tbody>`;
+    notices.forEach((notice) => {
+      html += `<tr>
+        <td>${notice.id}</td>
+        <td>${escapeHTML(notice.title)}</td>
+        <td>${escapeHTML(notice.content)}</td>
+        <td>${escapeHTML(notice.created_at)}</td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+    noticesList.innerHTML = html;
+  }
+
+  function showNoticeForm() {
+    noticeFormContainer.innerHTML = `
+      <h2>Add New Notice</h2>
+      <form id="addNoticeForm" action="../php/admin/add_notice.php" method="post" class="animated-form">
+        <div class="form-group">
+          <label for="title">Title:</label>
+          <input type="text" id="title" name="title" maxlength="100" required>
+        </div>
+        <div class="form-group">
+          <label for="content">Content:</label>
+          <textarea id="content" name="content" rows="4" maxlength="1000" required></textarea>
+        </div>
+        <button type="submit" class="submit-btn">Add Notice</button>
+      </form>
+    `;
+    noticeFormModal.style.display = "block";
+    const modalContent = noticeFormModal.querySelector(".modal-content");
+    modalContent.style.opacity = "0";
+    modalContent.style.transform = "translateY(-20px)";
+    setTimeout(() => {
+      modalContent.style.transition = "all 0.3s ease";
+      modalContent.style.opacity = "1";
+      modalContent.style.transform = "translateY(0)";
+    }, 50);
+
+    const form = document.getElementById("addNoticeForm");
+    if (form) {
+      form.addEventListener("submit", handleNoticeFormSubmit);
+    }
+  }
+
+  function handleNoticeFormSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<span class="spinner-small"></span> Adding...';
+    submitBtn.disabled = true;
+    const formData = new FormData(form);
+    fetch(form.action, {
+      method: "POST",
+      body: formData,
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.status === "success") {
+          form.innerHTML = `<div class="success-message"><div class="success-icon">✓</div><p>${data.message}</p></div>`;
+          setTimeout(() => {
+            closeNoticeModal();
+            loadNotices();
+          }, 1200);
+        } else {
+          submitBtn.innerHTML = "Try Again";
+          submitBtn.disabled = false;
+          const errorMessage = document.createElement("div");
+          errorMessage.className = "error-message";
+          errorMessage.textContent = data.message || "An error occurred";
+          submitBtn.parentNode.insertBefore(
+            errorMessage,
+            submitBtn.nextSibling
+          );
+          setTimeout(() => errorMessage.remove(), 3000);
+        }
+      })
+      .catch(() => {
+        submitBtn.innerHTML = "Try Again";
+        submitBtn.disabled = false;
+        const errorMessage = document.createElement("div");
+        errorMessage.className = "error-message";
+        errorMessage.textContent = "An error occurred. Please try again later.";
+        submitBtn.parentNode.insertBefore(errorMessage, submitBtn.nextSibling);
+      });
+  }
 }

@@ -1,56 +1,45 @@
 <?php
-// Include database connection
 require_once '../db_connect.php';
-
-// Set header to return JSON
 header('Content-Type: application/json');
 
-// Check if form is submitted
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Get form data
-    $title = $_POST['title'] ?? '';
-    $content = $_POST['content'] ?? '';
-    $date = date('Y-m-d'); // Current date
-    
-    // Validate required fields
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $title = trim($_POST['title'] ?? '');
+    $content = trim($_POST['content'] ?? '');
+    $created_at = date('Y-m-d H:i:s');
+
     if (empty($title) || empty($content)) {
         echo json_encode([
             'status' => 'error',
-            'message' => 'Please fill all required fields'
+            'message' => 'Title and content are required.'
         ]);
         exit;
     }
-    
+
     try {
-        // Prepare SQL query
-        $sql = "INSERT INTO notices (title, content, date) VALUES (:title, :content, :date)";
-        $stmt = $conn->prepare($sql);
-        
-        // Bind parameters
-        $stmt->bindParam(':title', $title, PDO::PARAM_STR);
-        $stmt->bindParam(':content', $content, PDO::PARAM_STR);
-        $stmt->bindParam(':date', $date, PDO::PARAM_STR);
-        
-        // Execute the query
-        $stmt->execute();
-        
-        // Return success response
-        echo json_encode([
-            'status' => 'success',
-            'message' => 'Notice added successfully'
-        ]);
-    } catch (PDOException $e) {
-        // Return error response
+        $stmt = $conn->prepare("INSERT INTO notices (title, content, created_at) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $title, $content, $created_at);
+        if ($stmt->execute()) {
+            echo json_encode([
+                'status' => 'success',
+                'message' => 'Notice added successfully.'
+            ]);
+        } else {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Failed to add notice.'
+            ]);
+        }
+        $stmt->close();
+    } catch (Exception $e) {
         echo json_encode([
             'status' => 'error',
             'message' => 'Database error: ' . $e->getMessage()
         ]);
     }
 } else {
-    // Return error for invalid request method
     echo json_encode([
         'status' => 'error',
-        'message' => 'Invalid request method'
+        'message' => 'Invalid request method.'
     ]);
 }
 ?>
