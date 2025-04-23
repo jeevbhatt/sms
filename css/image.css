@@ -1,0 +1,44 @@
+.image-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    width: 100%;
+    height: 300px; /* Adjust based on image height */
+    perspective: 1000px; /* Add perspective for a 3D effect */
+    overflow: hidden; /* Hide overflowing images */
+}
+
+.image {
+    position: absolute;
+    transition: transform 0.5s ease, opacity 0.5s ease;
+    opacity: 0.5; /* Less visible by default */
+    transform: scale(0.7); /* Scaled down by default */
+}
+
+.image img {
+    width: 800px;
+    height: auto;
+}
+
+.image.current {
+    opacity: 1;
+    transform: scale(1); /* Make the current image fully visible and larger */
+    z-index: 2;
+}
+
+.image.left {
+    transform: translateX(-150px) scale(0.8); /* Move slightly left and scale down */
+    z-index: 1;
+}
+
+.image.right {
+    transform: translateX(150px) scale(0.8); /* Move slightly right and scale down */
+    z-index: 1;
+}
+
+.image.hidden {
+    opacity: 0; /* Hide images that are out of view */
+    transform: scale(0.5); /* Scale down further */
+    z-index: 0;
+}

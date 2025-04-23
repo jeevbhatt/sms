@@ -1,0 +1,20 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+.logo-container {
+    text-align: center;
+    background-color: #f4f4f4;
+    padding: 20px;
+}
+
+.logo {
+    width: 150px;
+    height: auto;
+}
+
+.content {
+    padding: 20px;
+    text-align: center;
+}

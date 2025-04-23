@@ -1,0 +1,296 @@
+*{
+    box-sizing: border-box;
+    margin: auto;
+    padding: 1px;
+    font-family: 'Montserrat', sans-serif;
+}
+html{scroll-behavior: smooth;}
+body{
+    background-color: orchid;
+    width: 1300px;
+    background-repeat: repeat-x;
+    background-image: url(../img/b.jpg);
+    color: black;
+    transition: opacity 0.5s ease-in-out;
+    background: #CB3066;  /* fallback for old browsers */
+background: -webkit-linear-gradient(to right, #16BFFD, #CB3066);  /* Chrome 10-25, Safari 5.1-6 */
+background: linear-gradient(to right, #16BFFD, #CB3066); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+}
+li #home{
+    background-color: orange;
+    padding: 10px;
+}
+#loading {
+        text-align: center;
+        padding: 20px;
+        color: #999;
+        font-size: 1.2em;
+    }
+.nav{
+    text-align: center;
+}
+.page{
+    width: 100%;
+}
+.header{
+    background-image: url(../img/b.jpg);
+    border: solid seagreen; 2px;
+    text-align: center;
+    background-color: ##8cd1a5;
+    border-radius: 10px;
+    padding: 108px;
+    position: sticky;
+}
+li {
+    list-style-type: none;
+    padding: 2px;
+    transition-duration: 0.4s;
+}
+
+a {
+    text-decoration: none;
+    color: black;
+    font-weight: bold;
+}
+
+/* Links inside the .lin container */
+.lin a {
+    padding: 15px 30px;  /* Keep padding consistent */
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+/* Hover effect for links */
+.ligrad {
+    background: radial-gradient(circle, #ccc, #333);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: bold;
+    padding: 10px 20px; /* Padding for spacing */
+    display: inline-block;
+    text-decoration: none; /* Ensure no underline */
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+/* Hover Effect */
+.lin a:hover {
+    background: linear-gradient(132deg, rgb(255, 0, 0) 0%, rgb(255, 213, 0) 100%);
+    color: white; /* Add fallback text color */
+    transform: scale(1.1);
+    border-radius: 25px;
+    -webkit-background-clip: border-box; /* Ensures hover background applies to the full element */
+}
+
+/* Header styling */
+ul.nav {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    z-index: 1;
+    position: fixed;
+    text-align: center;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 0 20px;  /* Added horizontal padding for better spacing */
+    box-sizing: border-box;  /* Ensures padding doesn't affect the layout */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+    max-width: 100%;  /* Full width but with a max width */
+    width: 100%;
+    height: 60px;  /* Set a fixed height for the navbar */
+}
+
+/* Sub-navbar styling */
+ul.nav .niv {
+    padding-right: 90px;  /* Adjust the right padding as needed */
+    flex: 1;  /* Allow the logo to take space */
+    display: flex;
+    justify-content: flex-start;
+}
+
+ul.nav .lin {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex: 3;  /* Adjust to make the links in the center */
+}
+
+ul.nav .site {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+.site{
+    padding: 0px 0px 0px 90px;
+    list-style: none;
+    float: right;
+    position: sticky;
+}
+#ima{
+    float: left;
+    border-radius: 30px;
+    width: 50px;  
+}
+#im{
+    float: left;
+    border-radius: 50px;
+    width: 50px;
+    padding: 1px;
+    background-color: skyblue;
+}
+.nav a.active {
+            background-color: darkorange;
+            border-radius: 5px;
+            padding: 10px;
+            width: 1275px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
+        }
+ul.link{
+    padding-right: 50px;
+    border-radius: 5px;
+    z-index: 1;
+}
+.link a.active {
+            background-color: lightcoral;
+            border-radius: 5px;
+            padding: 10px;
+            width: 1275px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
+        }
+input{
+        padding-left: 8px;
+        border: 2px;
+        border-radius: 5px;
+    }
+h2{
+        padding: 10px;
+        color: black;
+        text-align: center;
+    }
+a button {
+    display: inline;
+}
+p{
+    text-align: center;
+    color: ghostwhite;
+    padding: 20px;
+}
+
+.bt:hover{
+    background-color: lightsalmon;
+    transition-duration: 0.2s;
+}
+.logo{
+    color: white;
+    float: left;
+    font-family: Times New Roman;
+}
+
+#home{scroll-margin-top: 100px;}
+/* Fade out effect */
+.fade-out {
+  animation: fadeOut 0.5s forwards;
+}
+
+/* Fade out keyframes */
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Fade in for the notices page */
+.fade-in {
+  animation: fadeIn 0.5s forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* Float-in Animation */
+@keyframes floatIn {
+    0% {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.float-in {
+    animation: floatIn 0.6s ease-out;
+}
+section {
+    display: none; /* All sections hidden by default */
+}
+/* Marquee Bar Styles */
+.marquee-bar {
+    position: fixed;
+    bottom: 0; /* Positioned at the bottom of the page */
+    left: 0;
+    width: 100%;
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 16px;
+    z-index: 1;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
+    transition: z-index 0.3s ease;
+}
+
+/* Marquee Content */
+.marquee-content {
+    white-space: nowrap;
+    overflow: hidden;
+    box-sizing: border-box;
+    animation: marquee 10s linear infinite;
+}
+
+.marquee-content span {
+    display: inline-block;
+    padding-right: 100%;
+}
+
+/* Hover effect */
+.marquee-bar:hover {
+    z-index: 10;
+}
+
+/* Marquee Animation */
+@keyframes marquee {
+    0% {
+        transform: translateX(100%);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+/* Footer Styles */
+.footer{
+    position: sticky;
+    background-position: bottom;
+    text-align: center;
+    margin-top: auto;
+    color: black;
+}
+footer {
+    background-color: #222;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    font-size: 14px;
+}
