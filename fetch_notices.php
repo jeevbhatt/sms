@@ -1,22 +1,37 @@
 <?php
-$offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
-$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 5;
+header('Content-Type: application/json');
 
-$conn = new mysqli('localhost', 'root', '', 'sms');
+$conn = new mysqli('localhost', 'root', '', 'school_management');
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    echo json_encode(['success' => false, 'error' => 'DB connection failed']);
+    exit;
 }
 
-$sql = "SELECT title, description, post_date FROM notices ORDER BY post_date DESC LIMIT $offset, $limit";
-$result = $conn->query($sql);
+$offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
+$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 5; // Use 5 for frontend infinite scroll
 
+$sql = "SELECT id, title, content, created_at FROM notices ORDER BY created_at DESC LIMIT ?, ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("ii", $offset, $limit);
+$stmt->execute();
+$result = $stmt->get_result();
+
+$notices = [];
 while ($row = $result->fetch_assoc()) {
-    echo "<div class='notice-card'>";
-    echo "<h3>{$row['title']}</h3>";
-    echo "<p>{$row['description']}</p>";
-    echo "<p class='date'>Posted on: <em>{$row['post_date']}</em></p>";
-    echo "</div>";
+    $notices[] = [
+        'id' => $row['id'],
+        'title' => $row['title'],
+        'content' => $row['content'],
+        'created_at' => $row['created_at']
+    ];
 }
 
+// Always return a valid JSON structure for the JS
+echo json_encode([
+    'success' => true,
+    'notices' => $notices
+]);
+
+$stmt->close();
 $conn->close();
 ?>

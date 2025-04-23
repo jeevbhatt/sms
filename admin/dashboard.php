@@ -28,6 +28,7 @@ if (!isset($_SESSION['admin_id'])) {
                 <li><a href="#" class="active" data-section="dashboard">Dashboard</a></li>
                 <li><a href="#" data-section="students">Manage Students</a></li>
                 <li><a href="#" data-section="notices">Manage Notices</a></li>
+                <li><a href="#" data-section="contacts">Contact Messages</a></li>
                 <li><a href="#" data-section="settings">Settings</a></li>
                 <li><a href="logout.php">Logout</a></li>
             </ul>
@@ -107,20 +108,37 @@ if (!isset($_SESSION['admin_id'])) {
                 <h2>Manage Students</h2>
                 <div class="action-buttons">
                     <button id="addStudentBtn" class="action-btn">Add New Student</button>
-                    <input type="text" id="studentSearch" placeholder="Search students by name...">
+                    <input type="text" id="studentSearch" placeholder="Search students by name, roll no, semester, etc...">
                 </div>
 
                 <div id="studentsList" class="data-list">
                     <!-- Student data will be loaded here via AJAX -->
                 </div>
-
-                <!-- Add/Edit Student Form Modal -->
-                <div id="studentFormModal" class="modal">
-                    <div class="modal-content">
-                        <span class="close-modal">&times;</span>
-                        <div id="studentFormContainer"></div>
-                    </div>
-                </div>
+                <div id="studentsLoading" style="display:none;">Loading...</div>
+                <div id="studentsError" style="color:red;"></div>
+                <script>
+                // AJAX search/filter students
+                function fetchStudents(query = '') {
+                    document.getElementById('studentsLoading').style.display = 'block';
+                    document.getElementById('studentsError').innerText = '';
+                    fetch('../php/admin/search_students.php?q=' + encodeURIComponent(query))
+                        .then(res => res.text())
+                        .then(html => {
+                            document.getElementById('studentsList').innerHTML = html;
+                            document.getElementById('studentsLoading').style.display = 'none';
+                        })
+                        .catch(() => {
+                            document.getElementById('studentsError').innerText = 'Error loading students.';
+                            document.getElementById('studentsLoading').style.display = 'none';
+                        });
+                }
+                document.addEventListener('DOMContentLoaded', function() {
+                    fetchStudents();
+                    document.getElementById('studentSearch').addEventListener('input', function() {
+                        fetchStudents(this.value);
+                    });
+                });
+                </script>
             </section>
 
             <!-- Notices Section -->
@@ -129,12 +147,39 @@ if (!isset($_SESSION['admin_id'])) {
                 <div class="action-buttons">
                     <button id="addNoticeBtn" class="action-btn">Add New Notice</button>
                 </div>
-
                 <div id="noticesList" class="data-list">
-                    <!-- Notices data will be loaded here via AJAX -->
                     <p>Loading notices data...</p>
                 </div>
-
+                <script>
+                // Load notices via AJAX
+                function fetchNotices() {
+                    const noticesList = document.getElementById('noticesList');
+                    noticesList.innerHTML = '<p>Loading notices data...</p>';
+                    fetch('../php/fetch_notices.php')
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success && data.notices.length > 0) {
+                                let html = '<table class="data-table"><thead><tr><th>ID</th><th>Title</th><th>Content</th><th>Created At</th></tr></thead><tbody>';
+                                data.notices.forEach(notice => {
+                                    html += `<tr>
+                                        <td>${notice.id}</td>
+                                        <td>${notice.title}</td>
+                                        <td>${notice.content}</td>
+                                        <td>${notice.created_at}</td>
+                                    </tr>`;
+                                });
+                                html += '</tbody></table>';
+                                noticesList.innerHTML = html;
+                            } else {
+                                noticesList.innerHTML = '<p>No notices found.</p>';
+                            }
+                        })
+                        .catch(() => {
+                            noticesList.innerHTML = '<p style="color:red;">Error loading notices.</p>';
+                        });
+                }
+                document.addEventListener('DOMContentLoaded', fetchNotices);
+                </script>
                 <!-- Add/Edit Notice Form Modal -->
                 <div id="noticeFormModal" class="modal">
                     <div class="modal-content">
@@ -142,6 +187,30 @@ if (!isset($_SESSION['admin_id'])) {
                         <div id="noticeFormContainer"></div>
                     </div>
                 </div>
+            </section>
+
+            <!-- Contact Messages Section -->
+            <section id="contacts-section" class="content-section">
+                <h2>Contact Messages</h2>
+                <div id="contactsList" class="data-list">
+                    <p>Loading contact messages...</p>
+                </div>
+                <script>
+                // Load contact messages via AJAX
+                function fetchContacts() {
+                    const contactsList = document.getElementById('contactsList');
+                    contactsList.innerHTML = '<p>Loading contact messages...</p>';
+                    fetch('../php/admin/view_contacts.php')
+                        .then(res => res.text())
+                        .then(html => {
+                            contactsList.innerHTML = html;
+                        })
+                        .catch(() => {
+                            contactsList.innerHTML = '<p style="color:red;">Error loading contact messages.</p>';
+                        });
+                }
+                document.addEventListener('DOMContentLoaded', fetchContacts);
+                </script>
             </section>
 
             <!-- Settings Section -->
@@ -169,5 +238,18 @@ if (!isset($_SESSION['admin_id'])) {
             </section>
         </main>
     </div>
+    <script>
+    // Sidebar navigation for sections
+    document.querySelectorAll('.admin-nav a[data-section]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            document.querySelectorAll('.admin-nav a').forEach(a => a.classList.remove('active'));
+            this.classList.add('active');
+            document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
+            const section = document.getElementById(this.getAttribute('data-section') + '-section');
+            if (section) section.classList.add('active');
+        });
+    });
+    </script>
 </body>
 </html>
