@@ -244,7 +244,7 @@ function initPageTransitions() {
       });
     }
   });
-  // Add fade-in effect when page
+  // Add fade-in effect when the page loads
   window.addEventListener("load", () => {
     document.body.classList.add("fade-in");
   });
