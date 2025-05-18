@@ -1,7 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
   // Initialize sidebar toggle
   initSidebar();
-
   // Initialize tab navigation
   initTabNavigation();
   // Initialize student management
