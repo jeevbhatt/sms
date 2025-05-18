@@ -1,4 +1,10 @@
 <?php
+session_start();
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    http_response_code(403);
+    exit('Unauthorized');
+}
+
 // Include database connection
 require_once '../db_connect.php';
 
@@ -16,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $roll = $_POST['roll'] ?? '';
     $dob = $_POST['dob'] ?? '';
     $gender = $_POST['gender'] ?? '';
-    
+
     // Validate required fields
     if (empty($name) || empty($email) || empty($phone) || empty($class) || empty($roll)) {
         echo json_encode([
@@ -25,14 +31,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
         exit;
     }
-    
+
     // Handle file upload
     $photo = '';
     if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
         $uploadDir = '../../uploads/';
         $fileName = time() . '_' . basename($_FILES['photo']['name']);
         $targetFile = $uploadDir . $fileName;
-        
+
         // Check if file is an actual image
         $check = getimagesize($_FILES['photo']['tmp_name']);
         if ($check === false) {
@@ -42,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             exit;
         }
-        
+
         // Check file size (limit to 5MB)
         if ($_FILES['photo']['size'] > 5000000) {
             echo json_encode([
@@ -51,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             exit;
         }
-        
+
         // Allow only certain file formats
         $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
         $fileExtension = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
@@ -62,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             exit;
         }
-        
+
         // Upload file
         if (move_uploaded_file($_FILES['photo']['tmp_name'], $targetFile)) {
             $photo = $fileName;
@@ -74,14 +80,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     }
-    
+
     try {
         // Check if email already exists
         $checkSql = "SELECT id FROM students WHERE email = :email";
         $checkStmt = $conn->prepare($checkSql);
         $checkStmt->bindParam(':email', $email, PDO::PARAM_STR);
         $checkStmt->execute();
-        
+
         if ($checkStmt->rowCount() > 0) {
             echo json_encode([
                 'status' => 'error',
@@ -89,12 +95,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             exit;
         }
-        
+
         // Prepare SQL query
-        $sql = "INSERT INTO students (name, email, phone, address, class, roll, dob, gender, photo) 
+        $sql = "INSERT INTO students (name, email, phone, address, class, roll, dob, gender, photo)
                 VALUES (:name, :email, :phone, :address, :class, :roll, :dob, :gender, :photo)";
         $stmt = $conn->prepare($sql);
-        
+
         // Bind parameters
         $stmt->bindParam(':name', $name, PDO::PARAM_STR);
         $stmt->bindParam(':email', $email, PDO::PARAM_STR);
@@ -105,10 +111,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bindParam(':dob', $dob, PDO::PARAM_STR);
         $stmt->bindParam(':gender', $gender, PDO::PARAM_STR);
         $stmt->bindParam(':photo', $photo, PDO::PARAM_STR);
-        
+
         // Execute the query
         $stmt->execute();
-        
+
         // Return success response
         echo json_encode([
             'status' => 'success',

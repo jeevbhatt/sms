@@ -29,6 +29,7 @@ if (!isset($_SESSION['admin_id'])) {
                 <li><a href="#" data-section="students">Manage Students</a></li>
                 <li><a href="#" data-section="notices">Manage Notices</a></li>
                 <li><a href="#" data-section="contacts">Contact Messages</a></li>
+                <li><a href="#" data-section="send-email">Send Email</a></li>
                 <li><a href="#" data-section="settings">Settings</a></li>
                 <li><a href="logout.php">Logout</a></li>
             </ul>
@@ -106,11 +107,12 @@ if (!isset($_SESSION['admin_id'])) {
             <!-- Students Section -->
             <section id="students-section" class="content-section">
                 <h2>Manage Students</h2>
-                <div class="action-buttons">
-                    <button id="addStudentBtn" class="action-btn">Add New Student</button>
-                    <input type="text" id="studentSearch" placeholder="Search students by name, roll no, semester, etc...">
+                <div class="action-buttons" style="display:flex;gap:10px;">
+                    <button id="addStudentBtn" class="action-btn">Add Student</button>
+                    <button id="updateStudentBtn" class="action-btn">Update Student</button>
+                    <button id="removeStudentBtn" class="action-btn">Remove Student</button>
+                    <input type="text" id="studentSearch" placeholder="Search students by name, roll no, semester, etc..." style="margin-left:auto;">
                 </div>
-
                 <div id="studentsList" class="data-list">
                     <!-- Student data will be loaded here via AJAX -->
                 </div>
@@ -137,6 +139,18 @@ if (!isset($_SESSION['admin_id'])) {
                     document.getElementById('studentSearch').addEventListener('input', function() {
                         fetchStudents(this.value);
                     });
+                    // Add Student button
+                    document.getElementById('addStudentBtn').onclick = function() {
+                        window.open('../php/admin/add_student.php', '_blank');
+                    };
+                    // Update Student button
+                    document.getElementById('updateStudentBtn').onclick = function() {
+                        window.open('../php/admin/update_student.php', '_blank');
+                    };
+                    // Remove Student button
+                    document.getElementById('removeStudentBtn').onclick = function() {
+                        window.open('../php/admin/delete_student.php', '_blank');
+                    };
                 });
                 </script>
             </section>
@@ -144,96 +158,201 @@ if (!isset($_SESSION['admin_id'])) {
             <!-- Notices Section -->
             <section id="notices-section" class="content-section">
                 <h2>Manage Notices</h2>
-                <div class="action-buttons">
-                    <button id="addNoticeBtn" class="action-btn">Add New Notice</button>
+                <div style="margin-bottom:10px;">
+                    <button id="addNoticeBtn" title="Add Notice" style="background:#2563eb;color:#fff;border:none;border-radius:4px;padding:6px 12px;font-size:18px;cursor:pointer;">
+                        &#43; <!-- Plus sign -->
+                    </button>
                 </div>
                 <div id="noticesList" class="data-list">
                     <p>Loading notices data...</p>
                 </div>
-                <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    // --- Notices Table Logic ---
-                    function fetchNotices() {
-                        const noticesList = document.getElementById('noticesList');
-                        noticesList.innerHTML = '<p>Loading notices data...</p>';
-                        fetch('../php/fetch_notices.php')
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data.success && data.notices.length > 0) {
-                                    let html = '<table class="data-table"><thead><tr><th>ID</th><th>Title</th><th>Content</th><th>Created At</th></tr></thead><tbody>';
-                                    data.notices.forEach(notice => {
-                                        html += `<tr>
-                                            <td>${notice.id}</td>
-                                            <td>${notice.title}</td>
-                                            <td>${notice.content}</td>
-                                            <td>${notice.created_at}</td>
-                                        </tr>`;
-                                    });
-                                    html += '</tbody></table>';
-                                    noticesList.innerHTML = html;
-                                } else {
-                                    noticesList.innerHTML = '<p>No notices found.</p>';
-                                }
-                            })
-                            .catch(() => {
-                                noticesList.innerHTML = '<p style="color:red;">Error loading notices.</p>';
-                            });
-                    }
-                    fetchNotices();
+                <!-- Modal for Add/Edit Notice -->
+                <div id="noticeFormModal" class="modal" style="display:none;">
+                    <div class="modal-content">
+                        <span class="close-modal" style="cursor:pointer;float:right;font-size:24px;">&times;</span>
+                        <div id="noticeFormContainer"></div>
+                    </div>
+                </div>
 
-                    // --- Add Notice Modal Logic ---
+                <!-- Custom Confirmation Modal -->
+                <div id="confirmModal" class="modal" style="display:none;">
+                    <div class="modal-content" style="max-width:350px;text-align:center;">
+                        <div id="confirmMessage" style="margin-bottom:20px;font-size:18px;"></div>
+                        <button id="confirmYesBtn" style="background:#2563eb;color:#fff;border:none;border-radius:4px;padding:6px 18px;margin-right:10px;cursor:pointer;">Yes</button>
+                        <button id="confirmNoBtn" style="background:#dc2626;color:#fff;border:none;border-radius:4px;padding:6px 18px;cursor:pointer;">No</button>
+                    </div>
+                </div>
+                <script>
+                // Helper to escape HTML
+                function escapeHTML(str) {
+                    return String(str)
+                        .replace(/&/g, "&amp;")
+                        .replace(/</g, "&lt;")
+                        .replace(/>/g, "&gt;")
+                        .replace(/"/g, "&quot;")
+                        .replace(/'/g, "&#039;");
+                }
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    const noticesList = document.getElementById('noticesList');
                     const addBtn = document.getElementById('addNoticeBtn');
                     const modal = document.getElementById('noticeFormModal');
                     const formContainer = document.getElementById('noticeFormContainer');
                     const closeBtn = modal.querySelector('.close-modal');
 
-                    addBtn.onclick = function() {
-                        formContainer.innerHTML = `
-                            <form id="addNoticeForm">
-                                <div class="form-group">
-                                    <label for="noticeTitle">Title:</label>
-                                    <input type="text" id="noticeTitle" name="title" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="noticeContent">Content:</label>
-                                    <textarea id="noticeContent" name="content" required></textarea>
-                                </div>
-                                <button type="submit" class="action-btn">Add Notice</button>
-                                <div id="addNoticeMsg" style="margin-top:10px;"></div>
-                            </form>
-                        `;
-                        modal.style.display = 'block';
-
-                        document.getElementById('addNoticeForm').onsubmit = function(e) {
-                            e.preventDefault();
-                            const formData = new FormData(this);
-                            fetch('../php/admin/add_notice.php', {
-                                method: 'POST',
-                                body: formData
-                            })
+                    // Fetch and render notices
+                    function fetchNotices() {
+                        noticesList.innerHTML = '<p>Loading notices data...</p>';
+                        fetch('../php/admin/get_notices.php')
                             .then(res => res.json())
                             .then(data => {
-                                const msg = document.getElementById('addNoticeMsg');
-                                if (data.success) {
-                                    msg.style.color = 'green';
-                                    msg.textContent = 'Notice added successfully!';
-                                    setTimeout(() => {
-                                        modal.style.display = 'none';
-                                        fetchNotices();
-                                    }, 800);
+                                if (data.success && data.notices && data.notices.length > 0) {
+                                    let html = `<table class="data-table"><thead>
+                                        <tr>
+                                            <th>Title</th>
+                                            <th>Content</th>
+                                            <th>Created At</th>
+                                            <th style="text-align:right;">Actions</th>
+                                        </tr>
+                                    </thead><tbody>`;
+                                    data.notices.forEach(notice => {
+                                        html += `<tr>
+                                            <td>${escapeHTML(notice.title)}</td>
+                                            <td>${escapeHTML(notice.content)}</td>
+                                            <td>${escapeHTML(notice.created_at)}</td>
+                                            <td style="text-align:right;">
+                                                <button class="edit-notice-btn" data-id="${notice.id}" title="Edit" style="background:none;border:none;cursor:pointer;">
+                                                    <!-- Pen SVG -->
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#2563eb" style="width:22px;height:22px;vertical-align:middle;">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                                    </svg>
+                                                </button>
+                                                <button class="delete-notice-btn" data-id="${notice.id}" title="Delete" style="background:none;border:none;cursor:pointer;">
+                                                    <!-- X SVG -->
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#dc2626" style="width:22px;height:22px;vertical-align:middle;">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            </td>
+                                        </tr>`;
+                                    });
+                                    html += '</tbody></table>';
+                                    noticesList.innerHTML = html;
+
+                                    // Attach event listeners for edit/delete
+                                    document.querySelectorAll('.edit-notice-btn').forEach(btn => {
+                                        btn.onclick = function() {
+                                            const id = this.dataset.id;
+                                            showNoticeForm('edit', id);
+                                        };
+                                    });
+                                    document.querySelectorAll('.delete-notice-btn').forEach(btn => {
+                                        btn.onclick = function() {
+                                            const id = this.dataset.id;
+                                            if (confirm('Are you sure you want to delete this notice?')) {
+                                                fetch('../php/admin/delete_notice.php?id=' + encodeURIComponent(id), { method: 'GET' })
+                                                    .then(res => res.json())
+                                                    .then(data => {
+                                                        if (data.success) {
+                                                            fetchNotices();
+                                                        } else {
+                                                            alert(data.error || 'Failed to delete notice.');
+                                                        }
+                                                    })
+                                                    .catch(() => alert('Error deleting notice.'));
+                                            }
+                                        };
+                                    });
                                 } else {
-                                    msg.style.color = 'red';
-                                    msg.textContent = data.error || 'Failed to add notice.';
+                                    noticesList.innerHTML = '<p>No notices found.</p>';
                                 }
                             })
                             .catch(() => {
-                                const msg = document.getElementById('addNoticeMsg');
-                                msg.style.color = 'red';
-                                msg.textContent = 'Error submitting notice.';
+                                noticesList.innerHTML = '<p style="color:red;">Failed to load notices. Please try again later.</p>';
                             });
-                        };
+                    }
+
+                    // Show Add/Edit Notice Form
+                    function showNoticeForm(mode, id = null) {
+                        let title = '', content = '';
+                        if (mode === 'edit' && id) {
+                            // Fetch notice data for editing
+                            fetch('../php/admin/get_notice.php?id=' + encodeURIComponent(id))
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        title = data.notice.title;
+                                        content = data.notice.content;
+                                        renderForm();
+                                    } else {
+                                        alert('Failed to load notice.');
+                                    }
+                                })
+                                .catch(() => alert('Error loading notice.'));
+                        } else {
+                            renderForm();
+                        }
+
+                        function renderForm() {
+                            formContainer.innerHTML = `
+                                <form id="noticeForm">
+                                    <div class="form-group">
+                                        <label for="noticeTitle">Title:</label>
+                                        <input type="text" id="noticeTitle" name="title" required value="${escapeHTML(title)}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="noticeContent">Content:</label>
+                                        <textarea id="noticeContent" name="content" required>${escapeHTML(content)}</textarea>
+                                    </div>
+                                    <button type="submit" class="action-btn">${mode === 'edit' ? 'Update' : 'Add'} Notice</button>
+                                    <div id="noticeMsg" style="margin-top:10px;"></div>
+                                </form>
+                            `;
+                            modal.style.display = 'block';
+
+                            document.getElementById('noticeForm').onsubmit = function(e) {
+                                e.preventDefault();
+                                const formData = new FormData(this);
+                                let url = mode === 'edit'
+                                    ? '../php/admin/update_notice.php'
+                                    : '../php/admin/add_notice.php';
+                                if (mode === 'edit') formData.append('id', id);
+                                fetch(url, {
+                                    method: 'POST',
+                                    body: formData
+                                })
+                                .then(res => res.json())
+                                .then(data => {
+                                    const msg = document.getElementById('noticeMsg');
+                                    if (data.success) {
+                                        msg.style.color = 'green';
+                                        msg.textContent = 'Notice ' + (mode === 'edit' ? 'updated' : 'added') + ' successfully!';
+                                        setTimeout(() => {
+                                            modal.style.display = 'none';
+                                            fetchNotices();
+                                        }, 800);
+                                    } else {
+                                        msg.style.color = 'red';
+                                        msg.textContent = data.error || 'Failed to submit notice.';
+                                    }
+                                })
+                                .catch(() => {
+                                    const msg = document.getElementById('noticeMsg');
+                                    msg.style.color = 'red';
+                                    msg.textContent = 'Error submitting notice.';
+                                });
+                            };
+                        }
+                    }
+
+                    // Add Notice button
+                    addBtn.onclick = function() {
+                        showNoticeForm('add');
                     };
 
+                    // Modal close logic
                     closeBtn.onclick = function() {
                         modal.style.display = 'none';
                     };
@@ -243,17 +362,10 @@ if (!isset($_SESSION['admin_id'])) {
                         }
                     };
 
-                    // --- Contact Messages Section (unchanged) ---
-                    // ...existing code for contacts...
+                    // Initial load
+                    fetchNotices();
                 });
                 </script>
-                <!-- Add/Edit Notice Form Modal -->
-                <div id="noticeFormModal" class="modal">
-                    <div class="modal-content">
-                        <span class="close-modal">&times;</span>
-                        <div id="noticeFormContainer"></div>
-                    </div>
-                </div>
             </section>
 
             <!-- Contact Messages Section -->
@@ -277,6 +389,72 @@ if (!isset($_SESSION['admin_id'])) {
                         });
                 }
                 document.addEventListener('DOMContentLoaded', fetchContacts);
+                </script>
+            </section>
+
+            <!-- Send Email Section -->
+            <section id="send-email-section" class="content-section">
+                <h2>Send Email (Gmail)</h2>
+                <form id="sendEmailForm" style="max-width:400px;">
+                    <div class="form-group">
+                        <label for="emailTo">Recipient Gmail:</label>
+                        <select id="emailSelect" style="width:100%;margin-bottom:8px;">
+                            <option value="">-- Select from Contact Messages --</option>
+                        </select>
+                        <input type="email" id="emailTo" name="emailTo" required placeholder="recipient@gmail.com" style="width:100%;">
+                    </div>
+                    <div class="form-group">
+                        <label for="emailMessage">Message:</label>
+                        <textarea id="emailMessage" name="emailMessage" required placeholder="Type your message here"></textarea>
+                    </div>
+                    <button type="submit" class="action-btn">Send Email</button>
+                    <div id="emailStatus" style="margin-top:10px;"></div>
+                </form>
+                <script>
+                // Populate email dropdown from contact messages
+                fetch('../php/admin/contact_emails.php')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && Array.isArray(data.emails)) {
+                            const select = document.getElementById('emailSelect');
+                            data.emails.forEach(email => {
+                                const opt = document.createElement('option');
+                                opt.value = email;
+                                opt.textContent = email;
+                                select.appendChild(opt);
+                            });
+                        }
+                    });
+
+                // When dropdown changes, fill input
+                document.getElementById('emailSelect').addEventListener('change', function() {
+                    document.getElementById('emailTo').value = this.value;
+                });
+
+                document.getElementById('sendEmailForm').onsubmit = function(e) {
+                    e.preventDefault();
+                    const status = document.getElementById('emailStatus');
+                    status.textContent = 'Sending...';
+                    status.style.color = 'black';
+                    fetch('../php/admin/send_gmail.php', {
+                        method: 'POST',
+                        body: new FormData(this)
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            status.textContent = 'Email sent successfully!';
+                            status.style.color = 'green';
+                        } else {
+                            status.textContent = data.error || 'Failed to send email.';
+                            status.style.color = 'red';
+                        }
+                    })
+                    .catch(() => {
+                        status.textContent = 'Error sending email.';
+                        status.style.color = 'red';
+                    });
+                };
                 </script>
             </section>
 

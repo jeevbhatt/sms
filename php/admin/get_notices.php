@@ -18,14 +18,14 @@ try {
 
     // Return success response with notices data
     echo json_encode([
-        'status' => 'success',
+        'success' => true,
         'notices' => $notices
     ]);
 } catch (Exception $e) {
     // Return error response
     echo json_encode([
-        'status' => 'error',
-        'message' => 'Database error: ' . $e->getMessage()
+        'success' => false,
+        'notices' => []
     ]);
 }
 ?>

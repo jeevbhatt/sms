@@ -17,12 +17,12 @@ try {
                 b_ed LIKE ? OR
                 gender LIKE ? OR
                 admitted_year LIKE ?
-                ORDER BY id DESC";
+                ORDER BY id DESC"; // DESC for descending order
         $stmt = $conn->prepare($sql);
         $likeTerm = "%$searchTerm%";
         $stmt->bind_param('sssss', $likeTerm, $likeTerm, $likeTerm, $likeTerm, $likeTerm);
     } else {
-        $sql = "SELECT * FROM students ORDER BY id DESC";
+        $sql = "SELECT * FROM students ORDER BY id DESC"; // DESC for descending order
         $stmt = $conn->prepare($sql);
     }
 

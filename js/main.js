@@ -24,6 +24,28 @@ document.addEventListener("DOMContentLoaded", function () {
   addAnimationClasses();
 });
 
+// Restrict service forms for non-admins
+window.addEventListener("DOMContentLoaded", function () {
+  var userRole = "user";
+  try {
+    userRole = window.userRole || "user";
+  } catch (e) {}
+  document.querySelectorAll(".service-link").forEach(function (link) {
+    var form = link.getAttribute("data-form");
+    if (
+      userRole !== "admin" &&
+      (form === "addStudent" ||
+        form === "updateStudent" ||
+        form === "removeStudent")
+    ) {
+      link.addEventListener("click", function (e) {
+        e.preventDefault();
+        alert("You are not authorized to perform this action.");
+      });
+    }
+  });
+});
+
 // Header scroll effect
 function initHeaderScroll() {
   const header = document.querySelector(".head");

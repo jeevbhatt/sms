@@ -8,8 +8,8 @@ header('Content-Type: application/json');
 // Check if ID is provided
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     echo json_encode([
-        'status' => 'error',
-        'message' => 'Notice ID is required'
+        'success' => false,
+        'error' => 'Notice ID is required'
     ]);
     exit;
 }
@@ -22,33 +22,33 @@ try {
     $checkStmt = $conn->prepare($checkSql);
     $checkStmt->bindParam(':id', $id, PDO::PARAM_INT);
     $checkStmt->execute();
-    
+
     if ($checkStmt->rowCount() === 0) {
         echo json_encode([
-            'status' => 'error',
-            'message' => 'Notice not found'
+            'success' => false,
+            'error' => 'Notice not found'
         ]);
         exit;
     }
-    
+
     // Prepare SQL query
     $sql = "DELETE FROM notices WHERE id = :id";
     $stmt = $conn->prepare($sql);
     $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-    
+
     // Execute the query
     $stmt->execute();
-    
+
     // Return success response
     echo json_encode([
-        'status' => 'success',
-        'message' => 'Notice deleted successfully'
+        'success' => true,
+        'error' => ''
     ]);
 } catch (PDOException $e) {
     // Return error response
     echo json_encode([
-        'status' => 'error',
-        'message' => 'Database error: ' . $e->getMessage()
+        'success' => false,
+        'error' => 'Database error: ' . $e->getMessage()
     ]);
 }
 ?>

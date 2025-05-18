@@ -32,13 +32,13 @@ try {
 
     // Close statement
     $stmt->close();
-
-    // Return JSON response
-    echo json_encode(['success' => true, 'notices' => $notices]);
 } catch (Exception $e) {
-    // Handle errors and return JSON response
-    echo json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
+    // Handle errors
+    $notices = [];
 }
+
+// Return JSON response
+echo json_encode(['success' => true, 'notices' => $notices]);
 
 // Close connection
 $conn->close();

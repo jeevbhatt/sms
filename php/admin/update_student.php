@@ -1,5 +1,10 @@
 <?php
 session_start();
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    http_response_code(403);
+    exit('Unauthorized');
+}
+
 // Check if user is logged in
 if (!isset($_SESSION['admin_id'])) {
     header('Content-Type: application/json');
@@ -20,25 +25,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $gender = $_POST['gender'];
     $b_ed = $_POST['b_ed'];
     $admitted_year = $_POST['admitted_year'];
-    
+
     // Handle file upload
     $photo_update = "";
     if (isset($_FILES['photo']) && $_FILES['photo']['error'] == 0) {
         $allowed = ['jpg', 'jpeg', 'png'];
         $filename = $_FILES['photo']['name'];
         $filetype = pathinfo($filename, PATHINFO_EXTENSION);
-        
+
         // Check if file type is allowed
         if (in_array(strtolower($filetype), $allowed)) {
             // Create unique filename
             $newname = uniqid() . '.' . $filetype;
             $upload_dir = '../../uploads/';
-            
+
             // Create directory if it doesn't exist
             if (!file_exists($upload_dir)) {
                 mkdir($upload_dir, 0777, true);
             }
-            
+
             // Move uploaded file
             if (move_uploaded_file($_FILES['photo']['tmp_name'], $upload_dir . $newname)) {
                 // Get current photo to delete
@@ -46,7 +51,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmt->bind_param("i", $id);
                 $stmt->execute();
                 $result = $stmt->get_result();
-                
+
                 if ($row = $result->fetch_assoc()) {
                     $old_photo = $row['photo'];
                     // Delete old photo if exists
@@ -54,12 +59,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         unlink($upload_dir . $old_photo);
                     }
                 }
-                
+
                 $photo_update = ", photo = ?";
             }
         }
     }
-    
+
     // Prepare SQL statement to prevent SQL injection
     if ($photo_update) {
         $sql = "UPDATE students SET name = ?, semester = ?, rollno = ?, gender = ?, b_ed = ?, admitted_year = ?, photo = ? WHERE id = ?";
@@ -70,7 +75,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("sissssi", $name, $semester, $rollno, $gender, $b_ed, $admitted_year, $id);
     }
-    
+
     // Execute the statement
     if ($stmt->execute()) {
         header('Content-Type: application/json');
@@ -79,10 +84,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         header('Content-Type: application/json');
         echo json_encode(['success' => false, 'message' => 'Error updating student: ' . $stmt->error]);
     }
-    
+
     // Close statement
     $stmt->close();
-    
+
     // Close connection
     $conn->close();
 }
