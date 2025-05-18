@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Initialize tab navigation
   initTabNavigation();
-
   // Initialize student management
   initStudentManagement();
 

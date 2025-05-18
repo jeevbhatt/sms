@@ -249,7 +249,6 @@ function initPageTransitions() {
     document.body.classList.add("fade-in");
   });
 }
-
 function addNoticeAdminControls() {
   const noticesContainer = document.getElementById("notices-container");
   if (!noticesContainer) return;
